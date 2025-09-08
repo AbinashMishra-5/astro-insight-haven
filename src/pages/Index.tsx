@@ -1,12 +1,58 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import Hero from "@/components/Hero";
+import Services from "@/components/Services";  
+import Astrologers from "@/components/Astrologers";
+import BookingForm from "@/components/BookingForm";
+import Horoscope from "@/components/Horoscope";
+import Testimonials from "@/components/Testimonials";
+import SunSignFinder from "@/components/SunSignFinder";
+import Blog from "@/components/Blog";
+import FAQ from "@/components/FAQ";
+import Contact from "@/components/Contact";
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
 
 const Index = () => {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
-      </div>
+    <div className="min-h-screen bg-background">
+      <Header />
+      
+      <main>
+        <section id="home">
+          <Hero />
+        </section>
+        
+        <section id="services">
+          <Services />
+        </section>
+        
+        <section id="astrologers">
+          <Astrologers />
+        </section>
+        
+        <section id="booking">
+          <BookingForm />
+        </section>
+        
+        <section id="horoscope">
+          <Horoscope />
+        </section>
+        
+        <SunSignFinder />
+        
+        <Testimonials />
+        
+        <section id="blog">
+          <Blog />
+        </section>
+        
+        <FAQ />
+        
+        <section id="contact">
+          <Contact />
+        </section>
+      </main>
+      
+      <Footer />
     </div>
   );
 };
