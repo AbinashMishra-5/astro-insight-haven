@@ -5,8 +5,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { MapPin, Phone, Mail, Clock, Star } from "lucide-react";
+import { ContactService } from "@/lib/firestoreService";
+import { useToast } from "@/hooks/use-toast";
 
 const Contact = () => {
+  const { toast } = useToast();
+  
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -16,6 +20,7 @@ const Contact = () => {
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -33,21 +38,50 @@ const Contact = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (validateForm()) {
-      // Form submission logic would go here
-      alert("Thank you for your message! We'll get back to you within 24 hours.");
+      setIsSubmitting(true);
       
-      // Reset form
-      setFormData({
-        name: "",
-        email: "",
-        phone: "",
-        subject: "",
-        message: ""
-      });
+      try {
+        // Prepare contact data for Firestore
+        const contactData = {
+          name: formData.name,
+          email: formData.email,
+          subject: formData.subject || "General Inquiry",
+          message: `${formData.message}${formData.phone ? `\n\nPhone: ${formData.phone}` : ''}`
+        };
+
+        // Save to Firestore
+        const contactId = await ContactService.createContact(contactData);
+        
+        toast({
+          title: "✨ Message Sent Successfully!",
+          description: `Thank you for reaching out! We'll get back to you within 24 hours. Message ID: ${contactId}`,
+          duration: 6000,
+        });
+        
+        // Reset form
+        setFormData({
+          name: "",
+          email: "",
+          phone: "",
+          subject: "",
+          message: ""
+        });
+        
+      } catch (error) {
+        console.error("Error submitting contact form:", error);
+        toast({
+          variant: "destructive",
+          title: "❌ Message Failed",
+          description: "Sorry, there was an error sending your message. Please try again or contact us directly.",
+          duration: 6000,
+        });
+      } finally {
+        setIsSubmitting(false);
+      }
     }
   };
 
@@ -87,9 +121,9 @@ const Contact = () => {
                   <div>
                     <h4 className="font-semibold mb-1">Visit Us</h4>
                     <p className="text-sm text-muted-foreground">
-                      123 Cosmic Avenue<br />
-                      Astrology District<br />
-                      Mumbai, Maharashtra 400001
+                      Astro Clinic<br />
+                      Near Kuchinda Bus Stand<br />
+                      Kuchinda, Odisha 768222
                     </p>
                   </div>
                 </div>
@@ -240,9 +274,10 @@ const Contact = () => {
 
                   <Button 
                     type="submit" 
+                    disabled={isSubmitting}
                     className="w-full btn-aurora py-6 text-lg font-semibold"
                   >
-                    Send Message
+                    {isSubmitting ? "Sending..." : "Send Message"}
                   </Button>
                 </form>
               </CardContent>
@@ -250,17 +285,19 @@ const Contact = () => {
           </div>
         </div>
 
-        {/* Map Placeholder */}
+        {/* Google Maps Embed */}
         <div className="mt-16">
           <Card className="cosmic-card overflow-hidden">
-            <div className="h-64 bg-gradient-to-r from-primary/20 to-accent/20 flex items-center justify-center">
-              <div className="text-center">
-                <MapPin className="text-primary mx-auto mb-4" size={48} />
-                <h3 className="text-xl font-playfair font-semibold mb-2">Find Us Here</h3>
-                <p className="text-muted-foreground">
-                  Interactive map showing our clinic location would be displayed here
-                </p>
-              </div>
+            <div className="h-[400px] w-full">
+              <iframe
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3714.7307595781145!2d84.01852641744384!3d21.872191600000003!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3a20e500514de8ff%3A0x2f3e008c890ff299!2sAstro%20Clinic!5e0!3m2!1sen!2sin!4v1695042433411!5m2!1sen!2sin"
+                width="100%"
+                height="100%"
+                style={{ border: 0 }}
+                allowFullScreen={true}
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+              />
             </div>
           </Card>
         </div>

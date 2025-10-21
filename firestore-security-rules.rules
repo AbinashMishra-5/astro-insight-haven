@@ -1,0 +1,81 @@
+// Secure Firestore Security Rules for Astrology Consultation Website
+// Copy this to Firebase Console → Firestore Database → Rules
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Bookings Collection - Allow users to create bookings, but not read others' bookings
+    match /bookings/{bookingId} {
+      // Allow anyone to create a booking (for consultation requests)
+      allow create: if isValidBooking() && resource == null;
+      
+      // Only allow reading/updating by the booking owner (by email) or admin
+      allow read, update: if isBookingOwner() || isAdmin();
+      
+      // Only allow deletion by admin
+      allow delete: if isAdmin();
+    }
+    
+    // Contacts Collection - Allow anyone to create contact messages
+    match /contacts/{contactId} {
+      // Allow anyone to create a contact message
+      allow create: if isValidContact() && resource == null;
+      
+      // Only allow reading by admin
+      allow read: if isAdmin();
+      
+      // No updates or deletes allowed for contacts
+      allow update, delete: if false;
+    }
+    
+    // Test Collection - Only for development/debugging
+    match /test/{testId} {
+      allow read, write: if isAdmin() || isDevelopment();
+    }
+    
+    // Admin Collection - Only admins can access
+    match /admin/{document=**} {
+      allow read, write: if isAdmin();
+    }
+    
+    // Helper Functions
+    function isValidBooking() {
+      let booking = request.resource.data;
+      return booking.keys().hasAll(['name', 'email', 'service', 'date', 'time']) &&
+             booking.name is string && booking.name.size() > 0 &&
+             booking.email is string && booking.email.matches('.*@.*\\..*') &&
+             booking.service is string && booking.service.size() > 0 &&
+             booking.date is string && booking.date.size() > 0 &&
+             booking.time is string && booking.time.size() > 0 &&
+             booking.status == 'pending' &&
+             booking.createdAt == request.time;
+    }
+    
+    function isValidContact() {
+      let contact = request.resource.data;
+      return contact.keys().hasAll(['name', 'email', 'message']) &&
+             contact.name is string && contact.name.size() > 0 &&
+             contact.email is string && contact.email.matches('.*@.*\\..*') &&
+             contact.message is string && contact.message.size() > 0 &&
+             contact.createdAt == request.time;
+    }
+    
+    function isBookingOwner() {
+      return request.auth != null && 
+             request.auth.token.email == resource.data.email;
+    }
+    
+    function isAdmin() {
+      // Add admin email addresses here
+      return request.auth != null && 
+             request.auth.token.email in ['admin@astroclinic.com', 'your-admin-email@gmail.com'];
+    }
+    
+    function isDevelopment() {
+      // Only allow in development environment
+      return request.auth != null && 
+             request.auth.token.email in ['developer@astroclinic.com'];
+    }
+  }
+}

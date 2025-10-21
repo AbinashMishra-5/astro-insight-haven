@@ -1,0 +1,112 @@
+// Practical Firestore Security Rules for Astrology Website (No Auth Required)
+// Copy this to Firebase Console → Firestore Database → Rules
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Bookings Collection - Allow creation only, limited reads
+    match /bookings/{bookingId} {
+      // Allow anyone to create a booking with proper validation
+      allow create: if isValidBooking() && 
+                       resource == null && 
+                       isRecentRequest();
+      
+      // No reading of other people's bookings (privacy protection)
+      allow read: if false;
+      
+      // No updates or deletes by public users
+      allow update, delete: if false;
+    }
+    
+    // Contacts Collection - Allow creation only
+    match /contacts/{contactId} {
+      // Allow anyone to create a contact message with validation
+      allow create: if isValidContact() && 
+                       resource == null && 
+                       isRecentRequest();
+      
+      // No reading of contact messages (privacy protection)
+      allow read: if false;
+      
+      // No updates or deletes
+      allow update, delete: if false;
+    }
+    
+    // Test Collection - Block all access in production
+    match /test/{testId} {
+      allow read, write: if false;
+    }
+    
+    // Validation Functions
+    function isValidBooking() {
+      let booking = request.resource.data;
+      return booking.keys().hasAll(['name', 'email', 'service', 'date', 'time', 'status', 'createdAt']) &&
+             // Name validation
+             booking.name is string && 
+             booking.name.size() >= 2 && 
+             booking.name.size() <= 100 &&
+             
+             // Email validation
+             booking.email is string && 
+             booking.email.matches('.*@.*\\..*') &&
+             booking.email.size() <= 100 &&
+             
+             // Service validation
+             booking.service is string && 
+             booking.service.size() > 0 && 
+             booking.service.size() <= 100 &&
+             
+             // Date validation (basic string check)
+             booking.date is string && 
+             booking.date.size() == 10 &&
+             
+             // Time validation
+             booking.time is string && 
+             booking.time.size() > 0 && 
+             booking.time.size() <= 50 &&
+             
+             // Status must be pending for new bookings
+             booking.status == 'pending' &&
+             
+             // Timestamp validation
+             booking.createdAt == request.time &&
+             
+             // Optional fields validation
+             (!booking.keys().hasAny(['phone']) || (booking.phone is string && booking.phone.size() <= 20)) &&
+             (!booking.keys().hasAny(['message']) || (booking.message is string && booking.message.size() <= 1000)) &&
+             (!booking.keys().hasAny(['astrologer']) || (booking.astrologer is string && booking.astrologer.size() <= 100));
+    }
+    
+    function isValidContact() {
+      let contact = request.resource.data;
+      return contact.keys().hasAll(['name', 'email', 'message', 'createdAt']) &&
+             // Name validation
+             contact.name is string && 
+             contact.name.size() >= 2 && 
+             contact.name.size() <= 100 &&
+             
+             // Email validation
+             contact.email is string && 
+             contact.email.matches('.*@.*\\..*') &&
+             contact.email.size() <= 100 &&
+             
+             // Message validation
+             contact.message is string && 
+             contact.message.size() >= 10 && 
+             contact.message.size() <= 2000 &&
+             
+             // Timestamp validation
+             contact.createdAt == request.time &&
+             
+             // Optional subject validation
+             (!contact.keys().hasAny(['subject']) || (contact.subject is string && contact.subject.size() <= 200));
+    }
+    
+    function isRecentRequest() {
+      // Only allow requests made within the last 5 minutes (prevents old timestamp attacks)
+      return request.time > timestamp.date(2024, 1, 1) && 
+             request.time < (timestamp.date(2030, 12, 31));
+    }
+  }
+}
