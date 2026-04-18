@@ -10,10 +10,37 @@ const Header = () => {
   };
 
   const scrollToSection = (sectionId: string) => {
-    const element = document.getElementById(sectionId);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
-    }
+    console.log('🔍 Attempting to scroll to section:', sectionId);
+    
+    // Wait a moment to ensure DOM is ready
+    setTimeout(() => {
+      const element = document.getElementById(sectionId);
+      console.log('🎯 Found element:', element);
+      
+      if (element) {
+        // Get the element's position
+        const elementRect = element.getBoundingClientRect();
+        const absoluteElementTop = elementRect.top + window.pageYOffset;
+        const headerOffset = 100; // Account for fixed header
+        const targetPosition = absoluteElementTop - headerOffset;
+        
+        console.log('📍 Element position:', absoluteElementTop);
+        console.log('🎯 Scrolling to position:', targetPosition);
+        
+        window.scrollTo({
+          top: targetPosition,
+          behavior: 'smooth'
+        });
+        
+        console.log('✅ Scroll command sent');
+      } else {
+        console.error('❌ Element not found with ID:', sectionId);
+        console.log('🔍 Available elements with IDs:');
+        const elementsWithIds = document.querySelectorAll('[id]');
+        elementsWithIds.forEach(el => console.log('  - ' + el.id));
+      }
+    }, 100);
+    
     setIsMenuOpen(false);
   };
 

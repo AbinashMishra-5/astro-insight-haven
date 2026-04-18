@@ -6,11 +6,18 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { MapPin, Phone, Mail, Clock, Star } from "lucide-react";
 import { ContactService } from "@/lib/firestoreService";
+import { EmailService } from "@/lib/emailService";
 import { useToast } from "@/hooks/use-toast";
+import { useEffect } from "react";
 
 const Contact = () => {
   const { toast } = useToast();
-  
+
+  // Initialize EmailJS when component loads
+  useEffect(() => {
+    EmailService.init();
+  }, []);
+
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -24,11 +31,11 @@ const Contact = () => {
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
-    
+
     if (!formData.name.trim()) newErrors.name = "Name is required";
     if (!formData.email.trim()) newErrors.email = "Email is required";
     if (!formData.message.trim()) newErrors.message = "Message is required";
-    
+
     // Email validation
     if (formData.email && !/\S+@\S+\.\S+/.test(formData.email)) {
       newErrors.email = "Please enter a valid email";
@@ -40,10 +47,10 @@ const Contact = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (validateForm()) {
       setIsSubmitting(true);
-      
+
       try {
         // Prepare contact data for Firestore
         const contactData = {
@@ -55,13 +62,48 @@ const Contact = () => {
 
         // Save to Firestore
         const contactId = await ContactService.createContact(contactData);
-        
-        toast({
-          title: "✨ Message Sent Successfully!",
-          description: `Thank you for reaching out! We'll get back to you within 24 hours. Message ID: ${contactId}`,
-          duration: 6000,
-        });
-        
+        console.log('💾 Contact message saved to Firestore with ID:', contactId);
+
+        // Send emails via EmailJS
+        console.log('📧 Attempting to send emails...');
+        try {
+          const emailData = {
+            from_name: formData.name,
+            from_email: formData.email,
+            phone: formData.phone,
+            subject: formData.subject || "General Inquiry",
+            message: formData.message
+          };
+
+          // Send confirmation email to customer only
+          console.log('📧 Sending confirmation email to customer...');
+          const customerEmailSent = await EmailService.sendContactConfirmation(emailData);
+
+          if (customerEmailSent) {
+            console.log('✅ Confirmation email sent successfully!');
+            toast({
+              title: "✨ Message Sent Successfully!",
+              description: `Thank you for reaching out! We've received your message and sent you a confirmation email. We'll get back to you within 24 hours. Message ID: ${contactId}`,
+              duration: 8000,
+            });
+          } else {
+            console.log('⚠️ Confirmation email failed but message saved');
+            toast({
+              title: "✨ Message Received!",
+              description: `Your message has been saved successfully! We'll get back to you soon. Message ID: ${contactId}`,
+              duration: 8000,
+            });
+          }
+
+        } catch (emailError: any) {
+          console.error('❌ Email error details:', emailError);
+          toast({
+            title: "✨ Message Received!",
+            description: `Your message has been saved successfully! Email confirmation failed but we'll contact you directly. Message ID: ${contactId}`,
+            duration: 8000,
+          });
+        }
+
         // Reset form
         setFormData({
           name: "",
@@ -70,7 +112,7 @@ const Contact = () => {
           subject: "",
           message: ""
         });
-        
+
       } catch (error) {
         console.error("Error submitting contact form:", error);
         toast({
@@ -207,7 +249,7 @@ const Contact = () => {
                   Fill out the form below and we'll get back to you as soon as possible
                 </CardDescription>
               </CardHeader>
-              
+
               <CardContent>
                 <form onSubmit={handleSubmit} className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -272,8 +314,8 @@ const Contact = () => {
                     {errors.message && <p className="text-destructive text-sm">{errors.message}</p>}
                   </div>
 
-                  <Button 
-                    type="submit" 
+                  <Button
+                    type="submit"
                     disabled={isSubmitting}
                     className="w-full btn-aurora py-6 text-lg font-semibold"
                   >

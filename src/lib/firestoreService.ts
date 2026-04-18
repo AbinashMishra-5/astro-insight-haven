@@ -24,6 +24,10 @@ export interface BookingData {
   date: string;
   time: string;
   message?: string;
+  amount?: number;
+  paymentStatus?: 'pending' | 'completed' | 'failed';
+  paymentId?: string;
+  paymentDate?: string;
   status: 'pending' | 'confirmed' | 'completed' | 'cancelled';
   createdAt: Timestamp;
 }
@@ -91,6 +95,26 @@ export class BookingService {
     }
   }
 
+  // Get single booking by ID
+  static async getBooking(bookingId: string): Promise<BookingData> {
+    try {
+      const bookingRef = doc(db, this.collectionName, bookingId);
+      const bookingSnap = await getDoc(bookingRef);
+      
+      if (bookingSnap.exists()) {
+        return {
+          id: bookingSnap.id,
+          ...bookingSnap.data()
+        } as BookingData;
+      } else {
+        throw new Error("Booking not found");
+      }
+    } catch (error) {
+      console.error("Error fetching booking:", error);
+      throw error;
+    }
+  }
+
   // Update booking status
   static async updateBookingStatus(bookingId: string, status: BookingData['status']): Promise<void> {
     try {
@@ -98,6 +122,21 @@ export class BookingService {
       await updateDoc(bookingRef, { status });
     } catch (error) {
       console.error("Error updating booking status:", error);
+      throw error;
+    }
+  }
+
+  // Update booking payment status
+  static async updateBookingPaymentStatus(bookingId: string, paymentData: {
+    paymentStatus: 'pending' | 'completed' | 'failed';
+    paymentId?: string;
+    paymentDate?: string;
+  }): Promise<void> {
+    try {
+      const bookingRef = doc(db, this.collectionName, bookingId);
+      await updateDoc(bookingRef, paymentData);
+    } catch (error) {
+      console.error("Error updating booking payment status:", error);
       throw error;
     }
   }

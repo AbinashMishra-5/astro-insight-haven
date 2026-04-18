@@ -3,7 +3,8 @@ import emailjs from '@emailjs/browser';
 // EmailJS configuration
 const EMAILJS_CONFIG = {
   serviceId: 'service_wedtkka', // Your EmailJS service ID
-  templateId: 'template_ik7s4za',   // Your existing template ID
+  bookingTemplateId: 'template_ik7s4za',   // Your existing booking template ID
+  contactTemplateId: 'template_85jrj7j', // Your actual contact template ID
   publicKey: 'DIg6o3rlUG2kPB_hz', // Your EmailJS public key
 };
 
@@ -19,6 +20,14 @@ export interface EmailData {
   message?: string;
 }
 
+export interface ContactEmailData {
+  from_name: string;
+  from_email: string;
+  phone?: string;
+  subject: string;
+  message: string;
+}
+
 export class EmailService {
   // Initialize EmailJS
   static init() {
@@ -30,7 +39,7 @@ export class EmailService {
   static async sendBookingConfirmation(emailData: EmailData): Promise<boolean> {
     try {
       console.log('📧 EmailJS Config:', EMAILJS_CONFIG);
-      
+
       const templateParams = {
         // Try both formats to match EmailJS template variables
         to_email: emailData.to_email,
@@ -55,11 +64,11 @@ export class EmailService {
 
       console.log('📧 Template params:', templateParams);
       console.log('📧 Sending email with service:', EMAILJS_CONFIG.serviceId);
-      console.log('📧 Using template:', EMAILJS_CONFIG.templateId);
+      console.log('📧 Using template:', EMAILJS_CONFIG.bookingTemplateId);
 
       const result = await emailjs.send(
         EMAILJS_CONFIG.serviceId,
-        EMAILJS_CONFIG.templateId,
+        EMAILJS_CONFIG.bookingTemplateId,
         templateParams
       );
 
@@ -69,6 +78,86 @@ export class EmailService {
       console.error('❌ Failed to send email. Full error:', error);
       console.error('❌ Error status:', error.status);
       console.error('❌ Error text:', error.text);
+      return false;
+    }
+  }
+
+  // Send contact form email to customer (auto-reply)
+  static async sendContactConfirmation(contactData: ContactEmailData): Promise<boolean> {
+    try {
+      console.log('📧 Sending contact confirmation email...');
+
+      const templateParams = {
+        to_email: contactData.from_email,
+        to_name: contactData.from_name,
+        from_name: contactData.from_name,
+        reply_to: contactData.from_email,
+        subject: contactData.subject,
+        message: contactData.message,
+        phone: contactData.phone || 'Not provided',
+        // Company info
+        company_name: 'AstroClinic',
+        company_email: 'info@astroclinic.com',
+        company_phone: '+91 98765 43210',
+      };
+
+      console.log('📧 Contact confirmation template params:', templateParams);
+
+      const result = await emailjs.send(
+        EMAILJS_CONFIG.serviceId,
+        EMAILJS_CONFIG.contactTemplateId, // Use dedicated contact template
+        templateParams
+      );
+
+      console.log('✅ Contact confirmation email sent successfully!', result);
+      return true;
+    } catch (error: any) {
+      console.error('❌ Failed to send contact confirmation email:', error);
+      return false;
+    }
+  }
+
+  // Send notification to admin about new contact message
+  static async sendContactNotification(contactData: ContactEmailData): Promise<boolean> {
+    try {
+      console.log('📧 Sending contact notification to admin...');
+
+      const templateParams = {
+        to_email: 'info@astroclinic.com', // Your admin email
+        to_name: 'AstroClinic Admin',
+        from_name: contactData.from_name,
+        reply_to: contactData.from_email,
+        subject: `New Contact Message: ${contactData.subject}`,
+        message: `
+New contact form submission:
+
+Name: ${contactData.from_name}
+Email: ${contactData.from_email}
+Phone: ${contactData.phone || 'Not provided'}
+Subject: ${contactData.subject}
+
+Message:
+${contactData.message}
+
+Please respond to this inquiry promptly.
+        `,
+        phone: contactData.phone || 'Not provided',
+        // Company info
+        company_name: 'AstroClinic',
+        company_email: 'info@astroclinic.com',
+        company_phone: '+91 98765 43210',
+      };
+
+      const result = await emailjs.send(
+        EMAILJS_CONFIG.serviceId,
+        EMAILJS_CONFIG.contactTemplateId,
+        templateParams
+      );
+
+      console.log('✅ Contact notification sent to admin!', result);
+      return true;
+    } catch (error: any) {
+      console.error('❌ Failed to send contact notification:', error);
       return false;
     }
   }

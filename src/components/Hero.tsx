@@ -2,6 +2,45 @@ import { Button } from "@/components/ui/button";
 import { Star, Sparkles } from "lucide-react";
 import heroBg from "@/assets/hero-bg.jpg";
 
+const scrollToBooking = () => {
+  console.log('🎯 Hero button clicked - scrolling to booking');
+  setTimeout(() => {
+    const element = document.getElementById('booking');
+    if (element) {
+      const elementRect = element.getBoundingClientRect();
+      const absoluteElementTop = elementRect.top + window.pageYOffset;
+      const headerOffset = 100;
+      const targetPosition = absoluteElementTop - headerOffset;
+      
+      window.scrollTo({
+        top: targetPosition,
+        behavior: 'smooth'
+      });
+      console.log('✅ Hero scroll command sent');
+    } else {
+      console.error('❌ Booking section not found from Hero');
+    }
+  }, 100);
+};
+
+const scrollToServices = () => {
+  console.log('🎯 Services button clicked');
+  setTimeout(() => {
+    const element = document.getElementById('services');
+    if (element) {
+      const elementRect = element.getBoundingClientRect();
+      const absoluteElementTop = elementRect.top + window.pageYOffset;
+      const headerOffset = 100;
+      const targetPosition = absoluteElementTop - headerOffset;
+      
+      window.scrollTo({
+        top: targetPosition,
+        behavior: 'smooth'
+      });
+    }
+  }, 100);
+};
+
 const Hero = () => {
   return (
     <section className="relative min-h-screen flex items-center justify-center cosmic-bg overflow-hidden">
@@ -34,12 +73,16 @@ const Hero = () => {
         </div>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-          <Button className="btn-aurora px-8 py-6 text-lg font-semibold min-w-[200px]">
+          <Button 
+            className="btn-aurora px-8 py-6 text-lg font-semibold min-w-[200px]"
+            onClick={scrollToBooking}
+          >
             Book a Consultation
           </Button>
           <Button 
             variant="outline" 
             className="px-8 py-6 text-lg border-primary text-primary hover:bg-primary hover:text-primary-foreground min-w-[200px] hover-float"
+            onClick={scrollToServices}
           >
             Explore Services
           </Button>

@@ -23,7 +23,7 @@ const Astrologers = () => {
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-16">
           <h2 className="text-4xl md:text-5xl font-playfair font-bold mb-4 gradient-text">
-            Meet Our Astrologers
+            Meet Our Astrologer
           </h2>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
             Connect with experienced practitioners who combine ancient wisdom with modern insights
