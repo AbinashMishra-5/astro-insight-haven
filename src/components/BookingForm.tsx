@@ -405,7 +405,7 @@ const BookingForm = () => {
                 disabled={isSubmitting}
                 className="w-full btn-aurora py-6 text-lg font-semibold"
               >
-                {isSubmitting ? "Submitting..." : `Book Now - ₹${currentPrice}`}
+                {isSubmitting ? "Submitting..." : "Book Consultation"}
               </Button>
             </form>
           </CardContent>
